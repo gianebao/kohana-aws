@@ -1,0 +1,3 @@
+[submodule "vendor/aws"]
+	path = vendor/aws
+	url = https://github.com/gianebao/aws-sdk-php.git
