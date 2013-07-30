@@ -11,11 +11,14 @@
 $key    = null; // Your Access Key Id
 $secret = null; // Your Secret Key
 
+/**
+ * Load from environments
+ */
 if (empty($_SERVER['AWS_CONFIG']))
 {
     $aws    = parse_ini_file($_SERVER['AWS_CONFIG']);
     $key    = $aws['AWSAccessKeyId']; // Your Access Key Id
-    $secret = $aws['AWSSecretKey']; // Your Secret Key
+    $secret = $aws['AWSSecretKey'];   // Your Secret Key
 }
 
 /**
@@ -40,9 +43,10 @@ return array(
         'default_settings' => array(
             'params' => array(
                 'key'    => $key,
-                'secret' => $secret
+                'secret' => $secret,
+                
                 // http://docs.aws.amazon.com/general/latest/gr/rande.html
-                // 'region' => ''ap-southeast-1
+                'region' => 'ap-southeast-1'
             )
         ),
 
