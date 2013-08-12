@@ -14,7 +14,7 @@ $secret = null; // Your Secret Key
 /**
  * Load from environments
  */
-if (empty($_SERVER['AWS_CONFIG']))
+if (!empty($_SERVER['AWS_CONFIG']))
 {
     $aws    = parse_ini_file($_SERVER['AWS_CONFIG']);
     $key    = $aws['AWSAccessKeyId']; // Your Access Key Id
