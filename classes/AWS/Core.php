@@ -43,6 +43,6 @@ class AWS_Core extends \Aws\Common\Aws {
             $group = $config[$group];
         }
         
-        return parent::factory($group, $global_params);
+        return parent::factory($group, $config);
     }
 }

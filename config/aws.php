@@ -36,20 +36,24 @@ if (!empty($_SERVER['AWS_CONFIG']))
  * permissions and limitations under the License.
  */
 
+$DEFAULT = array(
+    'key'    => $key,
+    'secret' => $secret,
+    
+    // http://docs.aws.amazon.com/general/latest/gr/rande.html
+    'region' => 'ap-southeast-1'
+);
+
 return array(
     'class' => 'Aws\Common\Aws',
+    
+    'default' => $DEFAULT,
     'services' => array(
-
-        'default_settings' => array(
-            'params' => array(
-                'key'    => $key,
-                'secret' => $secret,
-                
-                // http://docs.aws.amazon.com/general/latest/gr/rande.html
-                'region' => 'ap-southeast-1'
-            )
+        
+        'default_settings' =>  array(
+            'params' => $DEFAULT,
         ),
-
+        
         'autoscaling' => array(
             'alias'   => 'AutoScaling',
             'extends' => 'default_settings',
