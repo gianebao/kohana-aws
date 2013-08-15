@@ -9,7 +9,7 @@ class AWS_Queue_Email_AWS extends Queue_Email {
         if (Kohana::$profiling === TRUE)
         {
             // Start a new benchmark
-            $benchmark = Profiler::start('AWS SES Email', __FUNCTION__);
+            $benchmark = Profiler::start('AWS', 'SQS Email');
             
             $q = AWS::factory()->get(self::ENGINE);
             
@@ -18,13 +18,6 @@ class AWS_Queue_Email_AWS extends Queue_Email {
                 'subject'   => $subject,
                 'body'      => $body,
                 'config'    => $config
-            );
-            
-            $q->sendMessage(
-                array(
-                    'QueueUrl' => $this->config['queue_url'],
-                    'MessageBody' => serialize($data)
-                )
             );
             
         }
@@ -36,6 +29,16 @@ class AWS_Queue_Email_AWS extends Queue_Email {
             // Stop the benchmark
             Profiler::stop($benchmark);
         }
+    }
+    
+    protected function _shutdown_handler()
+    {
+        $q->sendMessageBatch(
+            array(
+                'QueueUrl' => $this->config['queue_url'],
+                'MessageBody' => serialize($data)
+            )
+        );
     }
     
 }
