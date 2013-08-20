@@ -1,8 +1,7 @@
 <?php defined('SYSPATH') OR die('No direct script access.');
 
 class AWS_Queue_Email_AWS extends Queue_Email {
-    const ENGINE = 'sqs';
-    
+
     protected function _push($recipient, $subject, $body, $config)
     {
         // Be sure to only profile if it's enabled
@@ -24,15 +23,14 @@ class AWS_Queue_Email_AWS extends Queue_Email {
      
         // Do some stuff
      
-        if (isset($benchmark))
-        {
-            // Stop the benchmark
-            Profiler::stop($benchmark);
-        }
+
     }
     
     protected function _shutdown_handler()
     {
+        $queue_url = $this->config['queue_url'];
+        $crypt_key = $this->config['queue_url'];
+        
         $q->sendMessageBatch(
             array(
                 'QueueUrl' => $this->config['queue_url'],
