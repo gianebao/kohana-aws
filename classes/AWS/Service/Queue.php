@@ -10,10 +10,11 @@ class AWS_Service_Queue {
     /**
      * Push a queue request.
      *
-     * @param string $queue_url   The URL of the SQS queue to take action on.
-     * @param mixed  $data        Data message of the queue.
+     * @param string  $queue_url  The URL of the SQS queue to take action on.
+     * @param mixed   $data       Data message of the queue.
+     * @param object  $encrypt    Instance of an encryption class that has an `encode` & `decode` method.
      */
-    static public function push($queue_url, $data)
+    static public function push($queue_url, $data, $encrypt = null)
     {
         // Initialize variable.
         if (empty(self::$_data[$queue_url]))
@@ -30,15 +31,25 @@ class AWS_Service_Queue {
             self::$_initialized = true;
         }
         
+        $data = !is_string($data) ? serialize($data): $data;
         
-        $queue_url = $this->config['queue_url'];
-        $crypt_key = pack('H*', $this->config['crypt']);
+        // encrypt data when instance is provided
+        if (!empty($encrypt))
+        {
+            if (!method_exists($encrypt, 'encode'))
+            {
+                // Invalid encrytion class
+                throw new Kohana_Exception('Not a valid Encryption Class');
+            }
+            
+            $data = $encrypt->encode($data);
+        }
         
         // Push the request to the queue.
         array_push(self::$_data[$queue_url]['Entries'],
             array(
                 'Id'            => count(self::$_data[$queue_url]['Entries']),
-                'MessageBody'   => !is_string($data) ? serialize($data): $data
+                'MessageBody'   => $data
             )
         );
     }
@@ -49,11 +60,6 @@ class AWS_Service_Queue {
      *
      * @param string $data   The URL of the SQS queue to take action on.
      */
-    static protected function _send(& $data)
-    {
-
-    }
-    
     static public function shutdown_handler()
     {
         
@@ -77,29 +83,56 @@ class AWS_Service_Queue {
             Profiler::stop($benchmark);
         }
         
-        if (empty($q) && $)
+        if (empty($q) && is_object($q) && !is_callable($q, 'sendMessageBatch'))
         {
-            $keys = array_keys(self::$_data);
+            $keys = implode(',', array_keys(self::$_data));
+            
             Kohana::$log->add(Log::ALERT, 'Queue Data NOT SENT TO (:url)', array(
-                ':url' => implode(',', $keys)
+                ':url' => empty($keys) ? '`EMPTY`': $keys
             ));
+            
             return true;
         }
         
-        // Get engine instance
         foreach (self::$_data as $url => $data)
         {
-            // Be sure to only profile if it's enabled
+            // Profile sending.
             if (TRUE === Kohana::$profiling)
             {
                 // Start a new benchmark
                 $benchmark = Profiler::start(__CLASS__, $url);
             }
             
+            $response = $q->sendMessageBatch($data);
             
-            return $q->sendMessageBatch($data);
-    
-            self::_send($url);
+            if (!empty($response->Failed))
+            {
+                foreach($response->Failed as $entry)
+                {
+                    Kohana::$log->add(Log::ALERT, 'Queue Data FAILED (:url)', array(
+                        // The id of an entry in a batch request.
+                        ':url' => $data->QueueUrl,
+                        
+                        // The id of an entry in a batch request.
+                        ':id' => $entry->Id,
+                        
+                        // Whether the error happened due to the sender's fault.
+                        ':sender_fault' => $entry->SenderFault ? 'SenderFault': 'NotSenderFault',
+                        
+                        // An error code representing why the operation failed on this entry.
+                        ':code' => $entry->Code,
+                        
+                        // A message explaining why the operation failed on this entry.
+                        ':message' => $entry->Message,
+                    ));
+                }
+            }
+            
+            if (isset($benchmark))
+            {
+                // Stop the benchmark
+                Profiler::stop($benchmark);
+            }
         }
     }
 }
