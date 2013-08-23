@@ -32,10 +32,11 @@ class AWS_Queue_Email_AWS extends Queue_Email {
     protected function _push($recipient, $subject, $body, $config)
     {
         $data = array(
-            'recipient' => $recipient,
-            'subject'   => $subject,
-            'body'      => $body,
-            'config'    => $config
+            'recipient'  => $recipient,
+            'subject'    => $subject,
+            'body'       => $body,
+            'config'     => $config,
+            'client_ip'  => Request::$client_ip
         );
         
         $this->_init_encryption();
@@ -55,7 +56,7 @@ class AWS_Queue_Email_AWS extends Queue_Email {
         
         for ($i = 0, $count = count($response); $i < $count; $i ++)
         {
-            if (false !== $response[$i] && is_array($response[$i]))
+            if (false !== $response[$i])
             {
                 $response[$i] = unserialize($response[$i]);
             }

@@ -23,6 +23,19 @@ class AWS_Service_Queue {
     }
     
     /**
+     * Declare and queue engine
+     */
+    static public function engine()
+    {
+        if (empty(self::$_engine))
+        {
+            self::$_engine = AWS::factory()->get(self::ENGINE);
+        }
+        
+        return self::$_engine;
+    }
+    
+    /**
      * Push a queue request.
      *
      * @param string  $queue_url  The URL of the SQS queue to take action on.
@@ -74,12 +87,7 @@ class AWS_Service_Queue {
     {
         self::initialize();
         
-        if (empty(self::$_engine))
-        {
-            self::$_engine = AWS::factory()->get(self::ENGINE);
-        }
-        
-        $q = self::$_engine;
+        $q = self::engine();
         
         $response = $q->receiveMessage(array(
             'QueueUrl' => $queue_url
@@ -91,9 +99,17 @@ class AWS_Service_Queue {
         }
         
         $contents = array();
+        
+        if (!$response->hasKey('Messages'))
+        {
+            return false;
+        }
+        
+        $response = $response->get('Messages');
+        
         foreach ($response as $data)
         {
-            self::$_received[$queue_url][] = array('ReceiptHandle' => $data['ReceiptHandle']);
+            self::$_received[$queue_url][] = $data['ReceiptHandle'];
             
             // encrypt data when instance is provided
             if (!empty($encrypt))
@@ -104,22 +120,31 @@ class AWS_Service_Queue {
                     throw new Kohana_Exception('Not a valid Encryption Class');
                 }
                 
-                $content = $encrypt->decode($data);
+                $content = $encrypt->decode($data['Body']);
                 
                 if (false === $content)
                 {
-                    Kohana::$log->add(Log::ALERT, 'Queue Data DECRYPT FAILED (url:`:url`) -- :message', array(
+                    Kohana::$log->add(Log::ALERT, 'Queue Data DECRYPT FAILED (url:`:url`) -- :error -- :message', array(
                         // The id of an entry in a batch request.
-                        ':url' => $data->QueueUrl,
+                        ':url' => $queue_url,
                         
                         // A message explaining why the operation failed on this entry.
-                        ':message' => $data,
+                        ':error' => $encrypt::$last_error,
+                        
+                        // Message body
+                        ':message' => $data['Body'],
                     ));
                 }
+                else
+                {
+                    $contents[] = $content;
+                }
             }
+            
+            
         }
         
-        self::$_received = array_merge(array_unique(self::$_received[$queue_url]));
+        self::$_received[$queue_url] = array_merge(array_unique(self::$_received[$queue_url]));
         
         return $contents;
     }
@@ -161,6 +186,8 @@ class AWS_Service_Queue {
      */
     static public function remove_shifted()
     {
+        $q = self::engine();
+        
         foreach (self::$_received as $url => $data)
         {
             for ($i = 0,  $entries = array(), $count = count($data); $count > $i; $i ++)
@@ -171,6 +198,11 @@ class AWS_Service_Queue {
                 );
             }
             
+            if (empty($entries))
+            {
+                continue;
+            }
+            
             $response = $q->deleteMessageBatch(array(
                 'QueueUrl' => $url,
                 'Entries' => $entries
@@ -179,20 +211,7 @@ class AWS_Service_Queue {
             self::_check_failed($response);
         }
         
-        unset(self::$_received);
-        
-        if (empty(self::$_engine))
-        {
-            self::$_engine = AWS::factory()->get(self::ENGINE);
-        }
-        
-        $q = self::$_engine;
-        
-        $response = $q->receiveMessage(array(
-            'QueueUrl' => $queue_url
-        ));
-        
-        $deleteMessageBatch = '';
+        self::$_received = array();
     }
     
     static public function send_queue()
@@ -208,13 +227,7 @@ class AWS_Service_Queue {
             $benchmark = Profiler::start(__CLASS__, 'Initialize');
         }
         
-        // Get engine instance
-        if (empty(self::$_engine))
-        {
-            self::$_engine = AWS::factory()->get(self::ENGINE);
-        }
-        
-        $q = self::$_engine;
+        $q = self::engine();
         
         if (isset($benchmark))
         {
@@ -253,7 +266,7 @@ class AWS_Service_Queue {
             }
         }
         
-        unset(self::$_data);
+        self::$_data = array();
     }
     
     /**
@@ -264,6 +277,6 @@ class AWS_Service_Queue {
     static public function shutdown_handler()
     {
         self::send_queue();
-        self::remove_shifted();
+        //self::remove_shifted();
     }
 }
