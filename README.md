@@ -27,6 +27,20 @@ catch (S3Exception $e)
     echo "There was an error uploading the file.\n";
 }
 ```
+## Installation
+
+1. Add the project as a submodule from your project root. 
+    `$ git submodule add -b master https://github.com/gianebao/kohana-aws.git modules/aws`
+2. Update the submodules just to make sure.
+    `$ git submodule update --init --recursive`
+3. Go to the module's vendor folder.
+    `$ cd modules/aws/vendor/aws`
+4. Install Composer. [http://getcomposer.org]
+5. Install AWS dependencies. (Note: Currently, doing this does not get commited by git)
+`composer.phar install --verbose --prefer-dist`
+or, production
+`composer.phar install --verbose --prefer-dist --optimize-autoloader`
+
 
 ## Environment Variables
 
