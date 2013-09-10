@@ -214,6 +214,10 @@ class AWS_Service_Queue {
         self::$_received = array();
     }
     
+    /**
+     * Pushes the queue list.
+     * 
+     */
     static public function send_queue()
     {
         if (empty(self::$_data) && !is_array(self::$_data))
@@ -270,13 +274,11 @@ class AWS_Service_Queue {
     }
     
     /**
-     * Push a queue request.
-     *
-     * @param string $data   The URL of the SQS queue to take action on.
+     * Termination processes.
      */
     static public function shutdown_handler()
     {
         self::send_queue();
-        //self::remove_shifted();
+        self::remove_shifted();
     }
 }
