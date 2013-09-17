@@ -7,9 +7,13 @@
  *
  * Remember to set the proper permission to the config file.
  */
-
-$key    = null; // Your Access Key Id
-$secret = null; // Your Secret Key
+$DEFAULT = array(
+    'key'    => null,
+    'secret' => null,
+    
+    // http://docs.aws.amazon.com/general/latest/gr/rande.html
+    'region' => 'ap-southeast-1'
+);
 
 /**
  * Load from environments
@@ -17,8 +21,23 @@ $secret = null; // Your Secret Key
 if (!empty($_SERVER['AWS_CONFIG']))
 {
     $aws    = parse_ini_file($_SERVER['AWS_CONFIG']);
-    $key    = $aws['AWSAccessKeyId']; // Your Access Key Id
-    $secret = $aws['AWSSecretKey'];   // Your Secret Key
+    
+    
+    // Your Access Key Id
+    if (!empty($aws['AWSAccessKeyId']))
+    {
+        $DEFAULT['key'] = $aws['AWSAccessKeyId'];
+        unset($aws['AWSAccessKeyId']);
+    }
+    
+    // Your Access Key Id
+    if (!empty($aws['AWSSecretKey']))
+    {
+        $DEFAULT['secret'] = $aws['AWSSecretKey'];
+        unset($aws['AWSSecretKey']);
+    }
+    
+    $DEFAULT = Arr::merge($DEFAULT, $aws);
 }
 
 /**
@@ -35,14 +54,6 @@ if (!empty($_SERVER['AWS_CONFIG']))
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-
-$DEFAULT = array(
-    'key'    => $key,
-    'secret' => $secret,
-    
-    // http://docs.aws.amazon.com/general/latest/gr/rande.html
-    'region' => 'ap-southeast-1'
-);
 
 return array(
     'class' => 'Aws\Common\Aws',

@@ -1,11 +1,9 @@
 <?php defined('SYSPATH') OR die('No direct script access.');
 
-class AWS_Service_Queue {
-    
+class AWS_Service_Queue extends AWS_Service {
     const ENGINE = 'sqs';
     
     static protected $_data = array();
-    static protected $_engine = null;
     
     static protected $_initialized = false;
     static protected $_received = array();
@@ -20,19 +18,6 @@ class AWS_Service_Queue {
             register_shutdown_function(array('AWS_Queue', 'shutdown_handler'));
             self::$_initialized = true;
         }
-    }
-    
-    /**
-     * Declare and queue engine
-     */
-    static public function engine()
-    {
-        if (empty(self::$_engine))
-        {
-            self::$_engine = AWS::factory()->get(self::ENGINE);
-        }
-        
-        return self::$_engine;
     }
     
     /**
@@ -87,7 +72,7 @@ class AWS_Service_Queue {
     {
         self::initialize();
         
-        $q = self::engine();
+        $q = self::engine(self::ENGINE);
         
         $response = $q->receiveMessage(array(
             'QueueUrl' => $queue_url
@@ -186,7 +171,7 @@ class AWS_Service_Queue {
      */
     static public function remove_shifted()
     {
-        $q = self::engine();
+        $q = self::engine(self::ENGINE);
         
         foreach (self::$_received as $url => $data)
         {
@@ -231,7 +216,7 @@ class AWS_Service_Queue {
             $benchmark = Profiler::start(__CLASS__, 'Initialize');
         }
         
-        $q = self::engine();
+        $q = self::engine(self::ENGINE);
         
         if (isset($benchmark))
         {
