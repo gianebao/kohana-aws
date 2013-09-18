@@ -22,7 +22,6 @@ if (!empty($_SERVER['AWS_CONFIG']))
 {
     $aws    = parse_ini_file($_SERVER['AWS_CONFIG']);
     
-    
     // Your Access Key Id
     if (!empty($aws['AWSAccessKeyId']))
     {

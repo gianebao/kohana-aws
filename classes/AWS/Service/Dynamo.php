@@ -2,11 +2,30 @@
 
 use \Aws\DynamoDb\Enum\Type;
 use \Aws\DynamoDb\Enum\KeyType;
+use \Aws\DynamoDb\Enum\TableStatus;
 
 class AWS_Service_Dynamo extends AWS_Service {
     const ENGINE = 'dynamodb';
     
-    static protected $_prefix = '';
+    /**
+     * The table is being created, as the result of a CreateTable operation.
+     */
+    const TS_CREATING = TableStatus::CREATING;
+    
+    /**
+     * The table is being updated, as the result of an UpdateTable operation.
+     */
+    const TS_UPDATING = TableStatus::UPDATING;
+    
+    /**
+     * The table is being deleted, as the result of a DeleteTable operation.
+     */
+    const TS_DELETING = TableStatus::DELETING;
+    
+    /**
+     * The table is ready for use.
+     */
+    const TS_ACTIVE = TableStatus::ACTIVE;
     
     /**
      * (string) Represents the attribute data,
@@ -85,10 +104,10 @@ class AWS_Service_Dynamo extends AWS_Service {
     /**
      * Create instance of Message
      */
-    static public function factory($name)
+    static public function factory($name, $prefix = '')
     {
         $engine   = self::engine(self::ENGINE);
-        $reflection = new ReflectionClass(self::$_prefix . $name);
+        $reflection = new ReflectionClass($prefix . $name);
         $class = $reflection->newInstanceArgs(array($name));
         return $class;
     }
@@ -109,6 +128,17 @@ class AWS_Service_Dynamo extends AWS_Service {
     {
         // send to DynamoDb
         $engine   = self::engine(self::ENGINE);
+        
+        $table = $engine->describeTable(array(
+            'TableName' => $this->_table_name
+        ));
+        
+        $table_status = $table->getPath('Table/TableStatus');
+        
+        if (!empty($table_status))
+        {
+            return $table_status;
+        }
         
         $definition = array();
         $keyschema = array();
@@ -142,6 +172,8 @@ class AWS_Service_Dynamo extends AWS_Service {
                 'WriteCapacityUnits' => self::DEFAULT_CAPACITY_WRITE
             )
         ));
+        
+        return true;
     }
     
     /**
@@ -149,17 +181,17 @@ class AWS_Service_Dynamo extends AWS_Service {
      *
      * @param  array  $data  Hash of fields and their data
      */
-    static public function add(& $data)
+    public function add(& $data)
     {
         $fields = array();
         
         // Populates the data hash.
-        self::datafill(self::M_ADD, $data);
+        $this->datafill(self::M_ADD, $data);
         
         // Runs through all the declared fields and create a proper dynamo entry.
         foreach ($this->_fields as $key => $value)
         {
-            if (!isset($data[$key]))
+            if (isset($data[$key]))
             {
                 $fields[$key] = self::cast($value, $data[$key]);
             }
@@ -167,7 +199,7 @@ class AWS_Service_Dynamo extends AWS_Service {
         
         // send to DynamoDb
         $engine   = self::engine(self::ENGINE);
-        $response = $client->putItem(array(
+        $response = $engine->putItem(array(
             'TableName' => $this->_table_name,
             'Item' => $fields
         ));
@@ -194,7 +226,7 @@ class AWS_Service_Dynamo extends AWS_Service {
      * @param  string  $method  Constant mode of what the process is.
      * @param  string  $data    Data hash.
      */
-    static public function datafill($method, & $data)
+    public function datafill($method, & $data)
     {
         return $data;
     }

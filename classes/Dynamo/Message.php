@@ -2,8 +2,6 @@
 
 class Dynamo_Message extends AWS_Dynamo {
     
-    static protected $_prefix = 'Dynamo_';
-    
     protected $_fields = array(
         'user_id'   => AWS_Dynamo::T_NUM,
         'sender_id' => AWS_Dynamo::T_NUM,
@@ -19,4 +17,14 @@ class Dynamo_Message extends AWS_Dynamo {
      );
     
     protected $_table_name = 'dynamo_messages';
+    
+    public function datafill($method, & $data)
+    {
+        if (self::M_ADD != $method)
+        {
+            return false;
+        }
+        
+        $data['time'] = time();
+    }
 }
