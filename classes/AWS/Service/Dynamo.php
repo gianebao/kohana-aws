@@ -3,9 +3,28 @@
 use \Aws\DynamoDb\Enum\Type;
 use \Aws\DynamoDb\Enum\KeyType;
 use \Aws\DynamoDb\Enum\TableStatus;
+use \Aws\DynamoDb\Enum\ComparisonOperator;
+use \Aws\DynamoDb\Iterator\ItemIterator;
 
 class AWS_Service_Dynamo extends AWS_Service {
-    const ENGINE = 'dynamodb';
+    public static $_resource = 'dynamodb';
+    
+    /**
+     * Comparison Operators
+     */
+    const C_EQ = 'EQ';                      // ==
+    const C_NE = 'NE';                      // !=
+    const C_IN = 'IN';                      // IN []
+    const C_LE = 'LE';                      // <=
+    const C_LT = 'LT';                      // <
+    const C_GE = 'GE';                      // >
+    const C_GT = 'GT';                      // >=
+    const C_BETWEEN = 'BETWEEN'; 
+    const C_NOT_NULL = 'NOT_NULL';
+    const C_NULL = 'NULL';
+    const C_CONTAINS = 'CONTAINS';
+    const C_NOT_CONTAINS = 'NOT_CONTAINS';
+    const C_BEGINS_WITH = 'BEGINS_WITH';
     
     /**
      * The table is being created, as the result of a CreateTable operation.
@@ -106,10 +125,44 @@ class AWS_Service_Dynamo extends AWS_Service {
      */
     static public function factory($name, $prefix = '')
     {
-        $engine   = self::engine(self::ENGINE);
         $reflection = new ReflectionClass($prefix . $name);
         $class = $reflection->newInstanceArgs(array($name));
         return $class;
+    }
+    
+    static public function iterate($data)
+    {
+        return new ItemIterator($data);
+    }
+    
+    /**
+     * Creates a condition entry based of the field.
+     *
+     * @param  string  $name        field name.
+     * @param  string  $operation   comparison operator.
+     * @param  string  $value       value.
+     * @return array
+     */
+    public function condition($name, $operation, $value)
+    {
+        return array(
+                'AttributeValueList' => array(
+                    $this->cast_field($name, $value)
+                ),
+                'ComparisonOperator' => $operation
+            );
+    }
+    
+    /**
+     * Creates a "casted" entry of the field.
+     *
+     * @param  string  $name   field name.
+     * @param  string  $value  value.
+     * @return array
+     */
+    public function cast_field($name, $value)
+    {
+        return self::cast($this->_fields[$name], $value);
     }
     
     /**
@@ -124,12 +177,15 @@ class AWS_Service_Dynamo extends AWS_Service {
         return array($field => $value);
     }
     
+    /**
+     * Creates the table
+     *
+     */
     public function build_table()
     {
         // send to DynamoDb
-        $engine   = self::engine(self::ENGINE);
-        
-        $table = $engine->describeTable(array(
+        $instance = AWS_Dynamo::instance();
+        $table = $instance->describeTable(array(
             'TableName' => $this->_table_name
         ));
         
@@ -160,7 +216,7 @@ class AWS_Service_Dynamo extends AWS_Service {
         }
         
         // Create an "errors" table
-        $engine->createTable(array(
+        $instance->createTable(array(
             'TableName' => $this->_table_name,
             
             'AttributeDefinitions' => $definition,
@@ -198,8 +254,7 @@ class AWS_Service_Dynamo extends AWS_Service {
         }
         
         // send to DynamoDb
-        $engine   = self::engine(self::ENGINE);
-        $response = $engine->putItem(array(
+        AWS_Dynamo::instance()->putItem(array(
             'TableName' => $this->_table_name,
             'Item' => $fields
         ));

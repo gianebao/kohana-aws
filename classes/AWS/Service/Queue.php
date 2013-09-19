@@ -1,7 +1,7 @@
 <?php defined('SYSPATH') OR die('No direct script access.');
 
 class AWS_Service_Queue extends AWS_Service {
-    const ENGINE = 'sqs';
+    public static $_resource = 'sqs';
     
     static protected $_data = array();
     

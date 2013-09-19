@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct script access.');
 
-require AWS_MOD_PATH . DIRECTORY_SEPARATOR . 'vendor'
+require_once AWS_MOD_PATH . DIRECTORY_SEPARATOR . 'vendor'
     . DIRECTORY_SEPARATOR . 'aws'
     . DIRECTORY_SEPARATOR . 'build'
     . DIRECTORY_SEPARATOR . 'aws-autoloader.php';
