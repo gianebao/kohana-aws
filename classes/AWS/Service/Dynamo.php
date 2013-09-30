@@ -185,11 +185,17 @@ class AWS_Service_Dynamo extends AWS_Service {
     {
         // send to DynamoDb
         $instance = AWS_Dynamo::instance();
-        $table = $instance->describeTable(array(
-            'TableName' => $this->_table_name
-        ));
+        $table = false;
         
-        $table_status = $table->getPath('Table/TableStatus');
+        try
+        {
+            $table = $instance->describeTable(array(
+                'TableName' => $this->_table_name
+            ));
+            
+            $table_status = $table->getPath('Table/TableStatus');
+        }
+        catch (Exception $e) {}
         
         if (!empty($table_status))
         {
@@ -254,7 +260,7 @@ class AWS_Service_Dynamo extends AWS_Service {
         }
         
         // send to DynamoDb
-        AWS_Dynamo::instance()->putItem(array(
+        $response = AWS_Dynamo::instance()->putItem(array(
             'TableName' => $this->_table_name,
             'Item' => $fields
         ));

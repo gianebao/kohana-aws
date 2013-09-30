@@ -3,7 +3,7 @@
 class Dynamo_Message extends AWS_Dynamo {
     
     protected $_fields = array(
-        'user_id'   => AWS_Dynamo::T_NUM,
+        'user_id'   => AWS_Dynamo::T_STR,
         'sender_id' => AWS_Dynamo::T_NUM,
         'is_read'   => AWS_Dynamo::T_NUM,
         'type'      => AWS_Dynamo::T_NUM,
@@ -12,7 +12,7 @@ class Dynamo_Message extends AWS_Dynamo {
     );
     
      protected $_key = array(
-        AWS_Dynamo::K_HASH   => array('user_id'  => AWS_Dynamo::T_NUM),
+        AWS_Dynamo::K_HASH   => array('user_id'  => AWS_Dynamo::T_STR),
         AWS_Dynamo::K_RANGE  => array('time'     => AWS_Dynamo::T_NUM),
      );
     
