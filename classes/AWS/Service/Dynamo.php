@@ -4,7 +4,10 @@ use \Aws\DynamoDb\Enum\Type;
 use \Aws\DynamoDb\Enum\KeyType;
 use \Aws\DynamoDb\Enum\TableStatus;
 use \Aws\DynamoDb\Enum\ComparisonOperator;
+use \Aws\DynamoDb\Enum\ReturnValue;
+use \Aws\DynamoDb\Enum\AttributeAction;
 use \Aws\DynamoDb\Iterator\ItemIterator;
+
 
 class AWS_Service_Dynamo extends AWS_Service {
     public static $_resource = 'dynamodb';
@@ -267,6 +270,101 @@ class AWS_Service_Dynamo extends AWS_Service {
         
         return $response;
     }
+    
+    public function get_keys()
+    {
+        $keys = array();
+        
+        foreach ($this->_key as $item)
+        {
+            list($k, $v) = each($item);
+            
+            $keys[] = $k;
+        }
+        
+        return $keys;
+    }
+    
+    /**
+     * Verifies if the item is the same as the response. Comparison ignores keys.
+     *
+     * @param  array  $response  AWS DynamoDB response
+     * @param  array  $expected  Expected result
+     * @return  boolean
+     */
+    protected function _verify_update($response, $expected)
+    {
+        if (empty($response['Attributes']))
+        {
+            return false;
+        }
+        $response = $response['Attributes'];
+        
+        $keys = $this->get_keys();
+        
+        foreach ($expected as $key => $item)
+        {
+            if (in_array($key, $keys))
+            {
+                continue;
+            }
+            
+            if (empty($response[$key]) || $response[$key][$this->_fields[$key]] != $item)
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Updates a record.
+     *
+     * @param  array  $data  Hash of fields and their data
+     */
+    public function update($keys, $data)
+    {
+        $key = array();
+        
+        foreach ($this->_key as $item)
+        {
+            list($k, $value) = each($item);
+            
+            if (empty($keys[$k]))
+            {
+                throw new Kohana_Exception('Key `:key` must be provided in performing updates.', array(':key' => $k));
+            }
+            
+            $key[$k] = array($value => $keys[$k]);
+        }
+        
+        $updates = array();
+        
+        foreach($data as $k => $value)
+        {
+            if (!empty($key[$k]))
+            {
+                continue;
+            }
+            
+            $updates[$k] = array(
+                'Value'   => array($this->_fields[$k] => $value),
+                'Action'  => AttributeAction::PUT,
+            );
+        }
+        
+        // send to DynamoDb
+        $response = AWS_Dynamo::instance()->updateItem(array(
+            'TableName'         => $this->_table_name,
+            'Key'               => $key,
+            'AttributeUpdates'  => $updates,
+            'ReturnValues'      => ReturnValue::UPDATED_NEW
+        ));
+        
+        return $response;
+    }
+    
     
     /**
      * Creates an instance of Dynamo.
