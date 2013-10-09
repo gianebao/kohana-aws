@@ -7,7 +7,6 @@ class Dynamo_Message extends AWS_Dynamo {
         'sender_id' => AWS_Dynamo::T_NUM,
         'user_id'   => AWS_Dynamo::T_STR,
         'is_read'   => AWS_Dynamo::T_NUM,
-        'type'      => AWS_Dynamo::T_NUM,
         'message'   => AWS_Dynamo::T_STR,
         'time'      => AWS_Dynamo::T_NUM,
     );
