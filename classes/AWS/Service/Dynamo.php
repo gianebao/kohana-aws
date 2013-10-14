@@ -389,4 +389,30 @@ class AWS_Service_Dynamo extends AWS_Service {
     {
         return $data;
     }
+    
+    /**
+     * Creates dynamo as session handler.
+     *
+     *  locking_strategy: Locking strategy fused for doing session locking. Default: null
+     *  dynamodb_client: DynamoDbClient object used for performing DynamoDB operations
+     *  table_name: Name of the DynamoDB table in which to store the sessions. Default: "sessions"
+     *  hash_key: Name of the hash key in the DynamoDB sessions table. Default: "id"
+     *  session_lifetime: Lifetime of an inactive session before it should be garbage collected.
+     *  consistent_read: Whether or not to use DynamoDB consistent reads for GetItem. Default: true
+     *  automatic_gc: Whether or not to use PHP's session auto garbage collection triggers.
+     *  gc_batch_size: Batch size used for removing expired sessions during garbage collection. Default: 25
+     *  gc_operation_delay: Delay between service operations during garbage collection
+     *  max_lock_wait_time: Maximum time (in seconds) to wait to acquire a lock before giving up
+     *  min_lock_retry_microtime: Minimum time (in microseconds) to wait between attempts to acquire a lock
+     *  max_lock_retry_microtime: Maximum time (in microseconds) to wait between attempts to acquire a lock
+     *
+     * @param  array  $config  Session configuration
+     * @return session handler
+     */
+    public static function register_session_handler($config = array())
+    {
+        // send to DynamoDb
+        $instance = AWS_Dynamo::instance();
+        return $instance->registerSessionHandler($config);
+    }
 }
